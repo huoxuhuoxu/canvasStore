@@ -168,6 +168,8 @@ class CanvasStage implements CanvasStageInterface {
     private aItem: any[] = [];                                // 所有被添加的元素 集合组
     private aTempItem: any[] = [];                            // 临时 集合组 过滤 aItem 配合使用
 
+    private globalCompositeOperation: string = "source-over";   // 待定 涉及 V 0.6 空间方案
+
     constructor ({id,width,height}){
         let oCanvas = document.getElementById(id);
         this.height = height? height : oCanvas.offsetHeight;    // 1.此处 优化 方案   默认全部清空 可 重置 h,w 值
@@ -408,6 +410,21 @@ class CanvasStore implements CanvasStoreInterface {
 *         3. 追加: 在绘制结束之前 回调函数 来 增加 灵活性/可拓展性
 *         4. 追加 多图形重叠后 的 参数 : globalCompositeOperation
 *         5. 舞台类中增加 新方法: 追加图片 方案    / 图片 与 形状/贝塞尔等 追加 方案分离
+*
+* */
+
+/* V 0.6
+*   1. canvasDataUrlTo canvas图像输出方式  base64编码 转 ascII码 转二进制码
+*   2. 舞台类增加 默认情况下的样式参数 设置 , 做到可以 形状/贝塞尔/线性 双重样式模式   (问题: 多少参数需要默认)
+*   3. 新增 线型 属性设置 lineWidth
+*   4. 新增 文字 绘制
+*   5. V 0.5 中没有实现的 3. 回调模式
+*   6. shadow/gradient等参数 设置
+*   7. 开放形变空间 / 必要情况下 增加 追加方案
+*
+*   对于 7 的解决方案:
+*       1. 传递 函数进来 , 在执行函数 完成 对 形变 的设置                          // 效率高 但 不该这样设计
+*       2. 传递 对象进来 , 对对象进行解构 根据参数对 形变 进行设置                 // 相对效率慢 但 合理设计
 *
 * */
 

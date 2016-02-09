@@ -112,6 +112,7 @@ var CanvasStage = (function () {
         this.fps = 30;
         this.aItem = [];
         this.aTempItem = [];
+        this.globalCompositeOperation = "source-over";
         var oCanvas = document.getElementById(id);
         this.height = height ? height : oCanvas.offsetHeight;
         this.width = width ? width : oCanvas.offsetWidth;
