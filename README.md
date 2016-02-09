@@ -1,0 +1,2 @@
+# canvasStore
+由于不想学createJs而用typescript写的canvas2d基本库
