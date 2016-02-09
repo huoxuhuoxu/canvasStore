@@ -1,2 +1,5 @@
-# canvasStore
+﻿# canvasStore
 由于不想学createJs而用typescript写的canvas2d基本库
+Demo2是测试文件
+js下是编译后的文件
+core下是ts源码

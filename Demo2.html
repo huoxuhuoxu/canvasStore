@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> canvas store test </title>
+    <style>
+        * {
+            padding: 0px;
+            margin: 0px;
+        }
+        body {
+            text-align: center;
+        }
+        #canvas1 {
+            margin: 50px auto;
+            border: 1px #000 solid;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas1" height="500" width="960"></canvas>
+
+
+    <script src="js/typescripts/Demo4.js"></script>
+
+
+    <script>
+
+        var cs = new CanvasStore();
+
+        var oStage = cs.createStage({id:"canvas1"});
+        console.log(oStage);
+        var oShape = cs.createShape();
+        var oShape2 = cs.createShape();
+        var oShape3 = cs.createBezier();
+        oShape.setOption({x:100,y:100,r:50,sa:0,ea:Math.PI/2,close:false}).setStyle({sc:'blue'});
+        oShape2.setOption({x:100,y:300,r:50,sa:0,ea:-Math.PI}).setStyle({sc:'green'});
+        oShape3.setOption({ix:0,iy:200,cp1x:25,cp2x:50,cp1y:75,cp2y:50,x:300,y:200}).setStyle({sc:'green'});
+        //        oShape.;
+
+        var oLine = cs.createLine();
+        var oImage = cs.createImage();
+
+        oImage.setOption({image:'img/aa.png',x:0,y:0,sx:100,sy:100,sw:400,sh:400});
+
+        oLine.setOption([0,0],[100,0],[50,200]).setStyle({sc:'green'});
+
+        oStage.appendShare(oShape).appendShare(oShape2).appendShare(oShape3).appendShare(oLine).setFps(50);
+        oStage.appendImage(oImage);
+//        var x = 10;
+//        oStage.tickStage(function(){
+//            x += 10;
+//            if(x > 500){
+//                x = 0;
+//                oStage.removeShare(oShape).removeShare(oShape2).removeShare(oShape3).removeShare(oLine);
+//                oStage.stopStage();
+//                return '';
+//            }
+//
+//            oLine.setOption([0,0],[100,0],[50,x]);
+//            oShape.setOption({x:x});
+//            oShape2.setOption({x:x});
+//            oShape3.setOption({x:x});
+//            oStage.updateStage();
+//        });
+
+//        console.log(oStage.stageOption);
+//
+//        oStage.stageOption = {height: 300, width: 400};
+//
+//        console.log(oStage.stageOption);
+
+
+
+        // 测试  es6
+
+//        var a = new Test();
+//
+//        a.createStyle(90,89);
+//        a.createArguments(90,12,23,34);
+//        console.log(a.createArray2(90,12,344,67));
+//        console.log(a.deCreateArray());
+//        console.log(a.fnB('1'));
+//        console.log(a.fnC([1,2,3]));
+////        console.log(a.fnD([1,2]));
+
+
+
+    </script>
+
+
+
+
+
+
+
+
+
+
+    <!--
+        ts强类型 只是在 ts 文件内 使用 函数变量时 已经设定好值了,
+        但是 假如 ts 编译成 js 再去 使用 , 实际 强类型的定义就无用了,
+        所以,想要真正能够 使用,不出错，就纯单ts，库,以及实际实现都是,
+        也可以封库,内部加判定.
+        =.= 视实际情况而定.
+        如果要ts使用原来js 的库,那么必须引入相对应的,js库的.d.ts文件,
+        目前,还是用于练习es6,以及写低库,编译更适合.
+    -->
+
+</body>
+</html>
