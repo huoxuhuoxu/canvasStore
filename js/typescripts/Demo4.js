@@ -16,6 +16,29 @@ var CanvasStyle = (function () {
     };
     return CanvasStyle;
 })();
+var CanvasText = (function (_super) {
+    __extends(CanvasText, _super);
+    function CanvasText(recognition, shape) {
+        if (shape === void 0) { shape = "text"; }
+        _super.call(this, recognition, shape);
+    }
+    CanvasText.prototype.setOption = function (_a) {
+        var text = _a.text, x = _a.x, y = _a.y;
+        this.text = text ? text : this.text;
+        this.x = x ? x : this.x;
+        this.y = y ? y : this.y;
+        return this;
+    };
+    CanvasText.prototype.appendShow = function (stage) {
+        stage.stage.font = "30px Verdana";
+        var a = this.text;
+        var b = Math.ceil(a.length * 30 / 3);
+        stage.fillStyle = this.fc;
+        stage.fillText(this.text, this.x - b, this.y + 30 / 2);
+        return true;
+    };
+    return CanvasText;
+})(CanvasStyle);
 var CanvasBezier = (function (_super) {
     __extends(CanvasBezier, _super);
     function CanvasBezier(recognition, shape) {
@@ -35,6 +58,19 @@ var CanvasBezier = (function (_super) {
         this.y = y ? y : this.y;
         this.close = close ? close : this.close;
         return this;
+    };
+    CanvasBezier.prototype.appendShow = function (stage) {
+        if (this.shape == "bezier") {
+            stage.moveTo(this.ix, this.iy);
+            stage.bezierCurveTo(this.cp1x, this.cp1y, this.cp2x, this.cp2y, this.x, this.y);
+            return true;
+        }
+        if (this.shape == "quadratic") {
+            stage.moveTo(this.ix, this.iy);
+            stage.quadraticCurveTo(this.cp1x, this.cp1y, this.x, this.y);
+            return true;
+        }
+        return false;
     };
     return CanvasBezier;
 })(CanvasStyle);
@@ -64,6 +100,17 @@ var CanvasShape = (function (_super) {
         this.close = (close || close == false) ? close : this.close;
         return this;
     };
+    CanvasShape.prototype.appendShow = function (stage) {
+        if (this.shape == "rect") {
+            stage.rect(this.x, this.y, this.w, this.h);
+            return true;
+        }
+        if (this.shape == "circle") {
+            stage.arc(this.x, this.y, this.r, this.sa, this.ea, false);
+            return true;
+        }
+        return false;
+    };
     return CanvasShape;
 })(CanvasStyle);
 var CanvasLine = (function (_super) {
@@ -78,10 +125,44 @@ var CanvasLine = (function (_super) {
         for (var _i = 0; _i < arguments.length; _i++) {
             arr[_i - 0] = arguments[_i];
         }
-        this.axis = arr.slice();
+        this.axis = arr;
         return this;
     };
+    CanvasLine.prototype.appendShow = function (stage) {
+        if (this.shape == 'line') {
+            var initpos = this.axis[0];
+            stage.moveTo(initpos[0], initpos[1]);
+            for (var i = 1; i < this.axis.length; i++) {
+                stage.lineTo(this.axis[i][0], this.axis[i][1]);
+            }
+            return true;
+        }
+        return false;
+    };
     return CanvasLine;
+})(CanvasStyle);
+var CanvasBlend = (function (_super) {
+    __extends(CanvasBlend, _super);
+    function CanvasBlend(recognition, shape) {
+        if (shape === void 0) { shape = "blend"; }
+        _super.call(this, recognition, shape);
+        this.close = true;
+    }
+    CanvasBlend.prototype.setOption = function () {
+        var arr = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            arr[_i - 0] = arguments[_i];
+        }
+        this.blends = arr;
+        return this;
+    };
+    CanvasBlend.prototype.appendShow = function (stage) {
+        for (var i in this.blends) {
+            this.blends[i].appendShow(stage);
+        }
+        return true;
+    };
+    return CanvasBlend;
 })(CanvasStyle);
 var CanvasImage = (function (_super) {
     __extends(CanvasImage, _super);
@@ -102,6 +183,30 @@ var CanvasImage = (function (_super) {
         this.sh = (sh || sh == 0) ? sh : this.sh;
         return this;
     };
+    CanvasImage.prototype.appendShow = function (stage) {
+        var oImg = new Image();
+        oImg.src = this.image;
+        var oStage = stage;
+        var _this = this;
+        oImg.onload = function () {
+            if (_this.sx || _this.sx == 0) {
+                var w = _this.w ? _this.w : _this.sw;
+                var h = _this.h ? _this.h : _this.sh;
+                oStage.drawImage(oImg, _this.sx, _this.sy, _this.sw, _this.sh, _this.x, _this.y, w, h);
+                return true;
+            }
+            if (_this.w || _this.w == 0) {
+                oStage.drawImage(oImg, _this.x, _this.y, _this.w, _this.h);
+                return true;
+            }
+            if (_this.x || _this.x == 0) {
+                oStage.drawImage(oImg, _this.x, _this.y);
+                return true;
+            }
+            return false;
+        };
+        return true;
+    };
     CanvasImage.prototype.setStyle = function () {
     };
     return CanvasImage;
@@ -113,40 +218,86 @@ var CanvasStage = (function () {
         this.aItem = [];
         this.aTempItem = [];
         this.globalCompositeOperation = "source-over";
-        var oCanvas = document.getElementById(id);
-        this.height = height ? height : oCanvas.offsetHeight;
-        this.width = width ? width : oCanvas.offsetWidth;
-        if (!oCanvas.getContext) {
+        this.translate = [0, 0];
+        this.rotate = 0;
+        this.canvas = document.getElementById(id);
+        this.height = height ? height : this.canvas.offsetHeight;
+        this.width = width ? width : this.canvas.offsetWidth;
+        if (!this.canvas.getContext) {
             alert("sorry,you browser does not support html canvas element");
         }
         else {
-            this.stage = oCanvas.getContext('2d');
+            this.stage = this.canvas.getContext('2d');
         }
     }
-    CanvasStage.prototype.appendShare = function (obj) {
-        this.stage.beginPath();
-        if (!this.shapeSwitchDraw(obj)) {
-            return false;
+    CanvasStage.prototype.setOption = function (_a) {
+        var translate = _a.translate, rotate = _a.rotate, gco = _a.gco;
+        this.translate = translate ? translate : this.translate;
+        this.rotate = rotate ? rotate : this.rotate;
+        this.globalCompositeOperation = gco ? gco : this.globalCompositeOperation;
+    };
+    CanvasStage.prototype.appendSpace = function () {
+        var arr = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            arr[_i - 0] = arguments[_i];
         }
-        ;
-        if (obj.close) {
-            this.stage.closePath();
+        this.stage.save();
+        this.stage.translate(this.translate[0], this.translate[1]);
+        this.stage.rotate(this.rotate);
+        for (var i in arr) {
+            this.stage.beginPath();
+            if (!this.shapeSwitchDraw(arr[i])) {
+                return false;
+            }
+            if (arr[i].close) {
+                this.stage.closePath();
+            }
+            if (arr[i].fc) {
+                this.stage.fillStyle = arr[i].fc;
+                this.stage.fill();
+            }
+            if (arr[i].sc) {
+                this.stage.strokeStyle = arr[i].sc;
+                this.stage.stroke();
+            }
+            if (!arr[i].close) {
+                this.stage.closePath();
+            }
+            this.aItem.push(arr[i]);
         }
-        if (obj.fc) {
-            this.stage.fillStyle = obj.fc;
-            this.stage.fill();
-        }
-        if (obj.sc) {
-            this.stage.strokeStyle = obj.sc;
-            this.stage.stroke();
-        }
-        if (!obj.close) {
-            this.stage.closePath();
-        }
-        this.aItem.push(obj);
+        this.stage.restore();
         return this;
     };
-    CanvasStage.prototype.updateStage = function () {
+    CanvasStage.prototype.appendShare = function () {
+        var arr = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            arr[_i - 0] = arguments[_i];
+        }
+        for (var i in arr) {
+            this.stage.beginPath();
+            if (!this.shapeSwitchDraw(arr[i])) {
+                return false;
+            }
+            if (arr[i].close) {
+                this.stage.closePath();
+            }
+            if (arr[i].fc) {
+                this.stage.fillStyle = arr[i].fc;
+                this.stage.fill();
+            }
+            if (arr[i].sc) {
+                this.stage.strokeStyle = arr[i].sc;
+                this.stage.stroke();
+            }
+            if (!arr[i].close) {
+                this.stage.closePath();
+            }
+            this.aItem.push(arr[i]);
+        }
+        return this;
+    };
+    CanvasStage.prototype.updateStage = function (derail) {
+        if (derail === void 0) { derail = true; }
         this.stage.clearRect(0, 0, this.width, this.height);
         for (var i in this.aItem) {
             this.appendShare(this.aItem[i]);
@@ -154,8 +305,11 @@ var CanvasStage = (function () {
         }
         this.aItem = this.aTempItem;
         this.aTempItem = [];
-        this.timer = null;
-        this.timer = setTimeout(arguments.callee.caller, this.fps);
+        if (derail) {
+            console.log(1);
+            this.timer = null;
+            this.timer = setTimeout(arguments.callee.caller, this.fps);
+        }
     };
     CanvasStage.prototype.tickStage = function (fn) {
         if (typeof (fn) == "function") {
@@ -182,6 +336,11 @@ var CanvasStage = (function () {
         }
         return this;
     };
+    CanvasStage.prototype.cleanStage = function () {
+        this.aItem = [];
+        this.stage.clearRect(0, 0, this.width, this.height);
+        return this;
+    };
     Object.defineProperty(CanvasStage.prototype, "stageOption", {
         get: function () {
             return { width: this.width, height: this.height };
@@ -195,57 +354,43 @@ var CanvasStage = (function () {
         configurable: true
     });
     CanvasStage.prototype.shapeSwitchDraw = function (obj) {
-        switch (obj.shape) {
-            case 'circle':
-                this.stage.arc(obj.x, obj.y, obj.r, obj.sa, obj.ea, false);
-                break;
-            case 'rect':
-                this.stage.rect(obj.x, obj.y, obj.w, obj.h);
-                break;
-            case 'bezier':
-                this.stage.moveTo(obj.ix, obj.iy);
-                this.stage.bezierCurveTo(obj.cp1x, obj.cp1y, obj.cp2x, obj.cp2y, obj.x, obj.y);
-                break;
-            case 'quadratic':
-                this.stage.moveTo(obj.ix, obj.iy);
-                this.stage.quadraticCurveTo(obj.cp1x, obj.cp1y, obj.x, obj.y);
-                break;
-            case 'line':
-                var initpos = obj.axis[0];
-                this.stage.moveTo(initpos[0], initpos[1]);
-                for (var i = 1; i < obj.axis.length; i++) {
-                    this.stage.lineTo(obj.axis[i][0], obj.axis[i][1]);
-                }
-                break;
-            default:
-                this.stage.closePath();
-                console.log('error:shape');
-                return false;
+        var b = obj.appendShow(this.stage);
+        if (!b) {
+            this.stage.closePath();
+            console.log('error:shape');
+            return false;
         }
         return true;
     };
-    CanvasStage.prototype.appendImage = function (obj) {
-        var oImg = new Image();
-        oImg.src = obj.image;
-        var oStage = this.stage;
-        oImg.onload = function () {
-            console.log(obj);
-            if (obj.sx || obj.sx == 0) {
-                var w = obj.w ? obj.w : obj.sw;
-                var h = obj.h ? obj.h : obj.sh;
-                oStage.drawImage(oImg, obj.sx, obj.sy, obj.sw, obj.sh, obj.x, obj.y, w, h);
-                return false;
-            }
-            if (obj.w || obj.w == 0) {
-                oStage.drawImage(oImg, obj.x, obj.y, obj.w, obj.h);
-                return false;
-            }
-            if (obj.x || obj.x == 0) {
-                oStage.drawImage(oImg, obj.x, obj.y);
-                return false;
-            }
-        };
-        return this;
+    CanvasStage.prototype.getDataUrl = function (_a) {
+        var type = _a.type, radio = _a.radio;
+        var sImageData = null;
+        if (!type) {
+            type = "image/png";
+        }
+        if (radio) {
+            sImageData = this.canvas.toDataURL(type, radio);
+        }
+        else {
+            sImageData = this.canvas.toDataURL(type);
+        }
+        var sImageBlob = this.convertBase64UrlToBlob(sImageData, type);
+        return [sImageData, sImageBlob];
+    };
+    CanvasStage.prototype.convertBase64UrlToBlob = function (urlData, type) {
+        if (type === void 0) { type = "image/jpeg"; }
+        var bytes = window.atob(urlData.split(',')[1]);
+        var ab = new ArrayBuffer(bytes.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < bytes.length; i++) {
+            ia[i] = bytes.charCodeAt(i);
+        }
+        return new Blob([ab], { "type": type });
+    };
+    CanvasStage.prototype.destoryOption = function () {
+        this.translate = [0, 0];
+        this.rotate = 0;
+        this.globalCompositeOperation = "source-over";
     };
     return CanvasStage;
 })();
@@ -261,6 +406,8 @@ var CanvasStore = (function () {
         this.createBezier = function (shape) { return new CanvasBezier(_this.reckonRecognition(), shape); };
         this.createLine = function (shape) { return new CanvasLine(_this.reckonRecognition(), shape); };
         this.createImage = function (shape) { return new CanvasImage(_this.reckonRecognition(), shape); };
+        this.createText = function (shape) { return new CanvasText(_this.reckonRecognition(), shape); };
+        this.createBlend = function (shape) { return new CanvasBlend(_this.reckonRecognition(), shape); };
         this.reckonRecognition = function () { return ++_this.recognition; };
     }
     return CanvasStore;
